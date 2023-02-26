@@ -1,5 +1,10 @@
 import boto3
 from datetime import datetime, timezone
+import logging
+
+# Configure logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # function for lambda
 def handler(event, context):
@@ -17,7 +22,7 @@ def handler(event, context):
 
     # Get list of instances
     response = ec2.describe_instances()
-    
+
     # Get instance ids as list
     instance_ids = []
 
@@ -27,9 +32,6 @@ def handler(event, context):
             for tag in instance['Tags']:
                 if tag['Key'] == 'Name':
                     instance_ids.append(instance['InstanceId'])
-
-    # Print list of instances
-    print(instance_ids)
 
     # Create ami for each instance
     for instance_id in instance_ids:
@@ -45,7 +47,7 @@ def handler(event, context):
                 NoReboot=True,
                 Description='AMI from' + instance_id,
             )
-            print(f"Successfully created AMI {image['ImageId']} for instance:{instance_id}")
+            logger.info(f"Successfully created AMI {image['ImageId']} for instance:{instance_id}")
             # Add tags
             ec2.create_tags(
                 Resources=[image['ImageId']],
@@ -61,7 +63,7 @@ def handler(event, context):
             )
         # Publish to sns for exception in image creation
         except Exception as e:
-            print(f'Error creating AMI: {e}')
+            logger.info(f'Error creating AMI: {e}')
             sns_client.publish(
                 TopicArn=my_topic,
                 Message=f'Error creating AMI for instance {instance_id} with error: {e}'
@@ -72,15 +74,14 @@ def handler(event, context):
 
     # Loop through the images and delete the old ones
     for image in images:
-        print(image.name + ' created on ' + image.creation_date)
         creation_date = datetime.strptime(image.creation_date, '%Y-%m-%dT%H:%M:%S.%fZ')
         age = datetime.now(timezone.utc).replace(tzinfo=None) - creation_date.replace(tzinfo=None)
         if age.days > 30:
             try:
                 image.deregister()
-                print(f'Deleted AMI {image.id}')
+                logger.info(f'Deleted AMI {image.id}')
             except Exception as e:
-                print(f'Exception while deleting AMI {image.id}: {e}')
+                logger.info(f'Exception while deleting AMI {image.id}: {e}')
                 sns_client.publish(
                     TopicArn=my_topic,
                     Message=f'Exception while deleting AMI {image.id}: {e}'
