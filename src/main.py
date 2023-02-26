@@ -38,7 +38,7 @@ for instance_id in instance_ids:
         # Create image
         image = ec2.create_image(
             InstanceId=instance_id,
-            Name=instance_name + '-' + datetime.now().strftime('%Y-%m-%d_%H-%M'),
+            Name=instance_name + '-' + datetime.now().strftime('%Y-%m-%d'),
             NoReboot=True,
             Description='AMI from' + instance_id,
         )
