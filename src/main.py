@@ -1,8 +1,11 @@
 import boto3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # EC2 client
 ec2 = boto3.client('ec2', region_name='us-east-1')
+
+# EC2 resource
+ec2_resource = boto3.resource('ec2', region_name='us-east-1')
 
 # SNS client
 sns_client = boto3.client('sns')
@@ -61,5 +64,21 @@ for instance_id in instance_ids:
         )
 
 # Get all images in my account
-images = ec2.describe_images(Owners=['self'])
+images = ec2_resource.images.filter(Owners=['self'])
 
+# Loop through the images and delete the old unused ones
+for image in images:
+    print(image.name + ' created on ' + image.creation_date)
+    creation_date = datetime.strptime(image.creation_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+    age = datetime.now(timezone.utc).replace(tzinfo=None) - creation_date.replace(tzinfo=None)
+
+    if age.days > 30:
+        try:
+            image.deregister()
+            print(f'Deleted AMI {image.id}')
+        except Exception as e:
+            print(f'Exception while deleting AMI {image.id}: {e}')
+            sns_client.publish(
+                TopicArn=my_topic,
+                Message=f'Exception while deleting AMI {image.id}: {e}'
+            )
