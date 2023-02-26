@@ -18,6 +18,7 @@ provider:
             - ec2:CreateImage
             - ec2:DeregisterImage
             - ec2:CreateTags
+            - ec2:DescribeImages
           Resource: "*"
 
         - Effect: Allow
