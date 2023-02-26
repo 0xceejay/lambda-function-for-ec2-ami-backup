@@ -2,7 +2,9 @@
 
 
 [Project Source](https://devopsrealtime.com/deploy-lambda-function-to-create-weekly-ec2-ami-backup/)
-![Project-architecture](images/Lambda-ami.jpeg)
+
+
+  ![Project-architecture](images/Lambda-ami.jpeg)
 
 ## Goal
 The goal of this project to create weekly EC2 AMI backup of all EC2 instances running in the us-east-1 region and delete AMIs older than 30 days.
