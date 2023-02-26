@@ -1,0 +1,45 @@
+org: 0xceejay
+app: amibackup
+service: AMI-backup
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: dev
+  region: us-east-1
+
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - ec2:DescribeInstances
+            - ec2:CreateImage
+            - ec2:DeregisterImage
+            - ec2:CreateTags
+          Resource: "*"
+
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: arn:aws:logs:*:*:*
+
+        - Effect: Allow
+          Action: 
+            - sns:Publish
+          Resource: arn:aws:sns:us-east-1:042923755775:My-Topic
+
+functions:
+  myFunction:
+    handler: src/main.handler
+    events:
+      - schedule: 
+          name: weeklySchedule
+          description: Run every Sunday at 5 AM EST
+          rate: cron(0 10 ? * SUN *)
+          enabled: true
+
+
